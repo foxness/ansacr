@@ -33,17 +33,45 @@ def parse_smses(raw_file)
     smses
 end
 
+def parse_reported_datetime(date, time)
+    DateTime.strptime "#{date} #{time or '00:00'}", '%d.%m.%y %H:%M'
+end
+
 def get_transactions(smses, visa_end)
-    transactions = smses.select { |a| a['address'] == '900' && a['body'].start_with?("VISA#{visa_end} ") }
-    transactions.each do |transaction|
-        transaction['newbody'] = transaction['body'][18..-1]
-        transaction['newbody'] = transaction['newbody'][6..-1] if transaction['newbody'][0, 5] =~ /\d{2}:\d{2}/
+    unprocessed_transactions = smses.select { |a| a['address'] == '900' && a['body'].start_with?("VISA#{visa_end} ") }
+    body_regex = /^.{4}(?<visa>.{4}).(?<date>.{8})(?: (?<time>\d{2}:\d{2}) )?(?<type>.+) (?<amount>\d+(?:.\d+)?)(?<currency>[[:alpha:]]+)(?: (?<vendor>.+))? Баланс: (?<balance>\d+(?:.\d+)?)[[:alpha:]]+$/
+    transactions = []
+    unprocessed_transactions.each do |unprocessed_transaction|
+        match = body_regex.match unprocessed_transaction['body']
+
+        unless match
+            raise 'FOUND A NON-MATCHING BODY' unless unprocessed_transaction['body'].include? 'ОТКАЗ'
+            next
+        end
+
+        transaction = Hash.new
+
+        transaction['date_received'] = unprocessed_transaction['date']
+        transaction['date_sent'] = unprocessed_transaction['date_sent']
+        transaction['body'] = unprocessed_transaction['body']
+
+        transaction['visa'] = match.named_captures['visa']
+        transaction['reported_date'] = parse_reported_datetime match.named_captures['date'], match.named_captures['time']
+        transaction['type'] = match.named_captures['type']
+        transaction['amount'] = match.named_captures['amount'].to_f
+        transaction['currency'] = match.named_captures['currency']
+        transaction['vendor'] = match.named_captures['vendor']
+        transaction['balance'] = match.named_captures['balance'].to_f
+
+        transactions << transaction
     end
+
     transactions
 end
 
 def serialize_transaction(transaction)
-    transaction['newbody']
+    # transaction['body']
+    transaction.inspect
 end
 
 def serialize_transactions(transactions)
