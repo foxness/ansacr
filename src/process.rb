@@ -1,8 +1,9 @@
 require 'date'
+require 'json'
 
 VISA_END = '1234'
 
-def get_unprocessed_file
+def get_unprocessed_filepath
     unprocessed_dir = File.join(File.dirname(File.dirname(__FILE__)), 'data', 'unprocessed')
     Dir[File.join unprocessed_dir, '*'].first
 end
@@ -69,22 +70,26 @@ def get_transactions(smses, visa_end)
     transactions
 end
 
-def serialize_transaction(transaction)
-    # transaction['body']
-    transaction.inspect
+def get_processed_filepath(unprocessed_filepath)
+    File.join(File.dirname(File.dirname(unprocessed_filepath)), 'processed', File.basename(unprocessed_filepath, '.xml') + '.json')
 end
 
-def serialize_transactions(transactions)
-    transactions.inject('') { |result, rnsct| "#{result}#{serialize_transaction(rnsct)}\n" }.rstrip
-end
+# def serialize_transaction(transaction)
+#     # transaction['body']
+#     transaction.inspect
+# end
+
+# def serialize_transactions(transactions)
+#     transactions.inject('') { |result, rnsct| "#{result}#{serialize_transaction(rnsct)}\n" }.rstrip
+# end
 
 def main
-    filename = get_unprocessed_file
-    raw = File.read filename
+    filepath = get_unprocessed_filepath
+    raw = File.read filepath
     smses = parse_smses raw
     transactions = get_transactions smses, VISA_END
-    serialized = serialize_transactions transactions
-    processed_filepath = File.join(File.dirname(File.dirname(filename)), 'processed', File.basename(filename, '.xml') + '.rnsct')
+    serialized = transactions.to_json
+    processed_filepath = get_processed_filepath filepath
     File.write processed_filepath, serialized
 end
 
