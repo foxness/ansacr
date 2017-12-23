@@ -45,8 +45,8 @@
             }
 
             let ctx = document.getElementById('myChart').getContext("2d")
-            ctx.canvas.width = 1000
-            ctx.canvas.height = 300
+            // ctx.canvas.width = 6400
+            // ctx.canvas.height = 800
             let cfg = {
                 type: 'line',
                 data: {
@@ -55,10 +55,11 @@
                         label: "My balance chart",
                         steppedLine: 'before',
                         data: data,
-                        pointRadius: 1,
+                        pointRadius: 0,
                         fill: true,
                         lineTension: 0,
-                        borderWidth: 2
+                        borderWidth: 2,
+                        borderColor: 'rgb(75, 192, 192)',
                     }]
                 },
                 options: {
@@ -69,11 +70,11 @@
                     },
                     tooltips: {
                         mode: 'index',
-                        intersect: true,
+                        intersect: false,
                     },
                     hover: {
-                        mode: 'nearest',
-                        intersect: true
+                        mode: 'index',
+                        intersect: false
                     },
                     scales: {
                         xAxes: [{
