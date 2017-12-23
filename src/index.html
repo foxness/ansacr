@@ -28,7 +28,7 @@
                 let date = moment(new Date(json[i].date_received))
                 data.push(
                 {
-                    t: date.valueOf(),
+                    t: date,
                     y: json[i].balance
                 })
 
@@ -53,6 +53,7 @@
                     labels: labels,
                     datasets: [{
                         label: "My balance chart",
+                        steppedLine: 'before',
                         data: data,
                         pointRadius: 1,
                         fill: true,
