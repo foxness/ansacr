@@ -4,8 +4,9 @@ require 'json'
 VISA_END = '1234'
 
 def get_unprocessed_filepath
-    unprocessed_dir = File.join(File.dirname(File.dirname(__FILE__)), 'data', 'unprocessed')
-    Dir[File.join unprocessed_dir, '*'].first
+    rootdir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+    unprocessed_dir = File.join(rootdir, 'data', 'unprocessed')
+	Dir[File.join unprocessed_dir, '*'].first
 end
 
 def parse_smses(raw_file)
@@ -74,6 +75,11 @@ def get_processed_filepath(unprocessed_filepath)
     File.join(File.dirname(File.dirname(unprocessed_filepath)), 'processed', File.basename(unprocessed_filepath, '.xml') + '.json')
 end
 
+def create_processed_directory(processed_filepath)
+    directory = File.dirname processed_filepath
+    Dir.mkdir(directory) unless File.exists?(directory)
+end
+
 # def serialize_transaction(transaction)
 #     # transaction['body']
 #     transaction.inspect
@@ -90,6 +96,7 @@ def main
     transactions = get_transactions smses, VISA_END
     serialized = transactions.to_json
     processed_filepath = get_processed_filepath filepath
+	create_processed_directory processed_filepath
     File.write processed_filepath, serialized
 end
 
