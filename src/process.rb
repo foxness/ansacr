@@ -35,13 +35,9 @@ def parse_smses(raw_file)
     smses
 end
 
-def parse_reported_datetime(date, time)
-    DateTime.strptime "#{date} #{time or '00:00'}", '%d.%m.%y %H:%M'
-end
-
 def get_transactions(smses, visa_end)
     unprocessed_transactions = smses.select { |a| a['address'] == '900' && a['body'].start_with?("VISA#{visa_end} ") }
-    body_regex = /^.{4}(?<visa>.{4}).(?<date>.{8})(?: (?<time>\d{2}:\d{2}) )?(?<type>.+) (?<amount>\d+(?:.\d+)?)(?<currency>[[:alpha:]]+)(?: (?<vendor>.+))? Баланс: (?<balance>\d+(?:.\d+)?)[[:alpha:]]+$/
+    body_regex =  /^.{4}(?<visa>.{4}).(?<date>.{8} )?(?:(?<time>\d{2}:\d{2}) )?(?<type>.+) (?<amount>\d+(?:.\d+)?)(?<currency>[[:alpha:]]+)(?: (?<vendor>.+))? Баланс: (?<balance>\d+(?:.\d+)?)[[:alpha:]]+$/
     transactions = []
     unprocessed_transactions.each do |unprocessed_transaction|
         match = body_regex.match unprocessed_transaction['body']
@@ -58,7 +54,7 @@ def get_transactions(smses, visa_end)
         transaction['body'] = unprocessed_transaction['body']
 
         transaction['visa'] = match.named_captures['visa']
-        transaction['reported_date'] = parse_reported_datetime match.named_captures['date'], match.named_captures['time']
+        transaction['reported_date'] = transaction['date_received']
         transaction['type'] = match.named_captures['type']
         transaction['amount'] = match.named_captures['amount'].to_f
         transaction['currency'] = match.named_captures['currency']
@@ -79,15 +75,6 @@ def create_processed_directory(processed_filepath)
     directory = File.dirname processed_filepath
     Dir.mkdir(directory) unless File.exists?(directory)
 end
-
-# def serialize_transaction(transaction)
-#     # transaction['body']
-#     transaction.inspect
-# end
-
-# def serialize_transactions(transactions)
-#     transactions.inject('') { |result, rnsct| "#{result}#{serialize_transaction(rnsct)}\n" }.rstrip
-# end
 
 def main
     filepath = get_unprocessed_filepath
