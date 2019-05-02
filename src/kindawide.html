@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ansacr</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+</head>
+
+<body>
+    <input type="file" id="file" />
+    <canvas id="myChart"></canvas>
+    <script>
+        if (!(window.File && window.FileReader && window.FileList && window.Blob))
+        {
+            alert('The File APIs are not fully supported in this browser.')
+        }
+
+        document.getElementById('file').addEventListener('change', handleFileSelect, false)
+
+        function init(json)
+        {
+            let data = []
+            let labels = []
+            for (let i = 0; i < json.length; ++i)
+            {
+                let date = moment(new Date(json[i].date_received))
+                data.push(
+                {
+                    t: date,
+                    y: json[i].balance
+                })
+
+                // let date = new Date(json[i].date_received)
+                // data.push(
+                // {
+                //     t: new Date(json[i].date_received),
+                //     y: json[i].balance
+                // })
+
+                // console.log(date.format('YYYY/MM/DD HH:mm'))
+
+                labels.push(date.format('YYYY/MM/DD HH:mm'))
+            }
+
+            let ctx = document.getElementById('myChart').getContext("2d")
+            
+            // CHANGE WIDTH SETTINGS HERE ------------------------------
+            
+            ctx.canvas.width = 3000
+            ctx.canvas.height = 750
+            
+            //  responsive: false
+            //  is important for this to work
+            // ---------------------------------------------------------
+            
+            let cfg = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "My balance",
+                        steppedLine: 'before',
+                        data: data,
+                        pointRadius: 0,
+                        fill: true,
+                        lineTension: 0,
+                        borderWidth: 2,
+                        borderColor: 'rgb(75, 192, 192)',
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    //maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'My balance chart'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            // ticks: {
+                            //     source: 'labels'
+                            // }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Balance (rub)'
+                            }
+                        }]
+                    }
+                }
+            }
+            var chart = new Chart(ctx, cfg)
+        }
+
+        function handleFileSelect(evt)
+        {
+            var f = evt.target.files[0]
+
+            if (f)
+            {
+                let r = new FileReader()
+                r.onload = (e) =>
+                {
+                    let json = JSON.parse(e.target.result)
+                    // console.log(json)
+                    init(json)
+                }
+                r.readAsText(f)
+            }
+            else
+            { 
+                alert("Failed to load file")
+            }
+        }
+    </script>
+</body>
+</html>

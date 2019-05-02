@@ -10,7 +10,7 @@ def get_unprocessed_filepath
 end
 
 def parse_smses(raw_file)
-    sms_regex = /<sms protocol="(?<protocol>[^"]+)" address="(?<address>[^"]+)" date="(?<date>[^"]+)" type="(?<type>[^"]+)" subject="(?<subject>[^"]+)" body=(?<body>('[^']*')|("[^"]*")) toa="(?<toa>[^"]+)" sc_toa="(?<sc_toa>[^"]+)" service_center="(?<service_center>[^"]+)" read="(?<read>[^"]+)" status="(?<status>[^"]+)" locked="(?<locked>[^"]+)" date_sent="(?<date_sent>[^"]+)" readable_date="(?<readable_date>[^"]+)" contact_name="(?<contact_name>[^"]+)" \/>/
+    sms_regex = /<sms protocol="(?<protocol>[^"]+)" address="(?<address>[^"]+)" date="(?<date>[^"]+)" type="(?<type>[^"]+)" subject="(?<subject>[^"]+)" body=(?<body>('[^']*')|("[^"]*")) toa="(?<toa>[^"]+)" sc_toa="(?<sc_toa>[^"]+)" service_center="(?<service_center>[^"]+)" read="(?<read>[^"]+)" status="(?<status>[^"]+)" locked="(?<locked>[^"]+)" date_sent="(?<date_sent>[^"]+)" sub_id="(?<sub_id>[^"]+)" readable_date="(?<readable_date>[^"]+)" contact_name="(?<contact_name>[^"]+)" \/>/
     
     sms_entry_count = raw_file.scan(/<sms /).length
     
@@ -37,7 +37,7 @@ end
 
 def get_transactions(smses, visa_end)
     unprocessed_transactions = smses.select { |a| a['address'] == '900' && a['body'].start_with?("VISA#{visa_end} ") }
-    body_regex =  /^.{4}(?<visa>.{4}).(?<date>.{8} )?(?:(?<time>\d{2}:\d{2}) )?(?<type>.+) (?<amount>\d+(?:.\d+)?)(?<currency>[[:alpha:]]+)(?: (?<vendor>.+))? Баланс: (?<balance>\d+(?:.\d+)?)[[:alpha:]]+$/
+    body_regex =  /^.{4}(?<visa>.{4}).(?<date>.{8} )?(?:(?<time>\d{2}:\d{2}) )?.+Баланс: (?<balance>\d+(?:.\d+)?)[[:alpha:]]+$/
     transactions = []
     unprocessed_transactions.each do |unprocessed_transaction|
         match = body_regex.match unprocessed_transaction['body']
@@ -53,12 +53,7 @@ def get_transactions(smses, visa_end)
         transaction['date_sent'] = unprocessed_transaction['date_sent']
         transaction['body'] = unprocessed_transaction['body']
 
-        transaction['visa'] = match.named_captures['visa']
         transaction['reported_date'] = transaction['date_received']
-        transaction['type'] = match.named_captures['type']
-        transaction['amount'] = match.named_captures['amount'].to_f
-        transaction['currency'] = match.named_captures['currency']
-        transaction['vendor'] = match.named_captures['vendor']
         transaction['balance'] = match.named_captures['balance'].to_f
 
         transactions << transaction
